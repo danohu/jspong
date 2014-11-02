@@ -1,3 +1,11 @@
+/*
+
+colors:
+ #808080 (charcoal background)
+ #809F60 (foreground)
+
+*/
+
 #board_inner {
-    background-color: black
+    background-color: #808080;
     }

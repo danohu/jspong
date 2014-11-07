@@ -26,6 +26,8 @@ var GameObject = Class.extend({
 });
 
 var Paddle = GameObject.extend({
+    automove_speed: 0, // 0 implies don't automate
+
     init: function(game, posx, size){
 	this.size = size;
 	this.posx = posx;
@@ -41,11 +43,20 @@ var Paddle = GameObject.extend({
 	context.lineTo(this.posx, this.bottom());
 	context.stroke();
         },
+    update: function(){
+	this.automove();
+	},
+    automove: function(){
+	if(this.automove_speed == 0) return;
+	if(this.posy > this.game.ball.posy) this.move(0 - this.automove_speed);
+	else if(this.posy < this.game.ball.posy) this.move(this.automove_speed);
+	},
+
     move: function(diffy){
 	// 'depth' seems clearer than height, considering the direction of the coords
 	// XXX: I'm letting paddles go slightly offscreen here
 	this.posy += diffy;
-	if (this.posy > this.game.boardheight) this.posy = this.game.boardheight;
+	if (this.bottom() >= this.game.boardheight) this.posy = this.game.boardheight - this.size;
 	if (this.posy < 0) this.posy = 0;
         },
     });
@@ -64,6 +75,7 @@ var Ball = GameObject.extend({
        var ymax = this.posy + this.radius;
        return (xmin, xmax, ymin, ymax);
         },
+    
 
     bouncey: function(ymin, ymax){
        var bh = 400;
@@ -82,26 +94,23 @@ var Ball = GameObject.extend({
 	if(this.posy < paddle.bottom() && this.posy > paddle.top()){
 	    if(this.velocity_x > 0){ // moving right
 		if ((paddle.posx >= this.posx) && (paddle.posx - this.posx < tolerance)){
-		    console.log('bouncing');
 		    this.velocity_x = -this.velocity_x
-		    console.log('new velocity is ' + this.velocity);
 		}
 	    }
 	    else { // moving left
 		if ((paddle.posx <= this.posx) && (this.posx - paddle.posx < tolerance)){
-		    console.log('bouncing');
 		    this.velocity_x = -this.velocity_x
-		    console.log('new velocity is ' + this.velocity);
 		}
 
 		}
 	}
     },
+    
 
     update: function(){
 	this.posx += this.velocity_x;
 	this.posy += this.velocity_y;
-	// XXX: here goes bounce-handling codeq
+	// XXX : here goes bounce-handling codeq
 	//var xmin, var xmax, var ymin, var ymax = this.bounds();
 	var xmin = this.posx - this.radius;
 	var xmax = this.posx + this.radius;
@@ -109,6 +118,7 @@ var Ball = GameObject.extend({
 	var ymax = this.posy + this.radius;
 	this.bouncey(ymin, ymax);
 	this.bouncePaddle(this.game.rightPaddle);
+	this.bouncePaddle(this.game.leftPaddle);
 	},
     draw: function(){
 	this.game.context.beginPath();
@@ -129,7 +139,7 @@ var Game = Class.extend({
     setup: function(){
 	this.boardheight = 500;
 	this.boardwidth = 700; // XXX; DRYify these
-	this.movespeed = 3; // how fast the paddle moves
+	this.movespeed = 5; // how fast the paddle moves
 	this.board = $('#board_outer');
 	this.canvas = $('<canvas>', {
 	    'id': 'board_inner'});
@@ -138,7 +148,8 @@ var Game = Class.extend({
 	this.canvas.attr('height', '500');
 	this.board.append(this.canvas);
 	this.context = $('#board_inner')[0].getContext("2d");
-	this.leftPaddle = new Paddle(this, 40, 35);
+	this.leftPaddle = new Paddle(this, 40, 100);
+	this.leftPaddle.automove_speed = 4;
 	this.rightPaddle = new Paddle(this, 660, 160);
 	this.ball = new Ball(this);
 	this.gameObjects = [this.ball, this.leftPaddle, this.rightPaddle];

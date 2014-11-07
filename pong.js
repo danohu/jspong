@@ -26,36 +26,35 @@ var GameObject = Class.extend({
 });
 
 var Paddle = GameObject.extend({
-    height: 5,
-    init: function(game, xpos, size){
+    init: function(game, posx, size){
 	this.size = size;
-	this.xpos = xpos;
+	this.posx = posx;
 	this.game = game;
-	this.ypos = Math.floor(this.game.boardheight / 2);
+	this.posy = Math.floor(this.game.boardheight / 2);
 	},
+    top: function(){ return this.posy - (this.size / 2)},
+    bottom: function(){ return this.posy + (this.size / 2)},
     draw: function(){
 	context = this.game.context;
 	context.beginPath();
-	var top = this.ypos - (this.size / 2);
-	var bottom = this.ypos + (this.size / 2);
-	context.moveTo(this.xpos, top);
-	context.lineTo(this.xpos, bottom);
+	context.moveTo(this.posx, this.top());
+	context.lineTo(this.posx, this.bottom());
 	context.stroke();
         },
     move: function(diffy){
 	// 'depth' seems clearer than height, considering the direction of the coords
 	// XXX: I'm letting paddles go slightly offscreen here
-	this.ypos += diffy;
-	if (this.ypos > this.game.boardheight) this.ypos = this.game.boardheight;
-	if (this.ypos < 0) this.ypos = 0;
+	this.posy += diffy;
+	if (this.posy > this.game.boardheight) this.posy = this.game.boardheight;
+	if (this.posy < 0) this.posy = 0;
         },
     });
 
 var Ball = GameObject.extend({
     posx: 350,
     posy: 250,
-    velocity_x: 0,
-    velocity_y: 4,
+    velocity_x: 6,
+    velocity_y: 2,
     radius: 5,
 
     bounds: function(){
@@ -77,6 +76,27 @@ var Ball = GameObject.extend({
 	   this.velocity_y = 0 - this.velocity_y;
          }
         },
+    bouncePaddle: function(paddle){
+	// check vertical
+	var tolerance = 10;
+	if(this.posy < paddle.bottom() && this.posy > paddle.top()){
+	    if(this.velocity_x > 0){ // moving right
+		if ((paddle.posx >= this.posx) && (paddle.posx - this.posx < tolerance)){
+		    console.log('bouncing');
+		    this.velocity_x = -this.velocity_x
+		    console.log('new velocity is ' + this.velocity);
+		}
+	    }
+	    else { // moving left
+		if ((paddle.posx <= this.posx) && (this.posx - paddle.posx < tolerance)){
+		    console.log('bouncing');
+		    this.velocity_x = -this.velocity_x
+		    console.log('new velocity is ' + this.velocity);
+		}
+
+		}
+	}
+    },
 
     update: function(){
 	this.posx += this.velocity_x;
@@ -88,6 +108,7 @@ var Ball = GameObject.extend({
 	var ymin = this.posy - this.radius;
 	var ymax = this.posy + this.radius;
 	this.bouncey(ymin, ymax);
+	this.bouncePaddle(this.game.rightPaddle);
 	},
     draw: function(){
 	this.game.context.beginPath();
@@ -96,7 +117,11 @@ var Ball = GameObject.extend({
 	this.game.context.strokeStyle = 'green';
 	this.game.context.stroke();
 	this.game.context.fill();
-	}
+	},
+    out_of_bounds: function(){
+	if(this.posx < 0 || this.posx > this.game.boardwidth) return true;
+	return false;
+	},
 });
 
 var Game = Class.extend({
@@ -114,14 +139,13 @@ var Game = Class.extend({
 	this.board.append(this.canvas);
 	this.context = $('#board_inner')[0].getContext("2d");
 	this.leftPaddle = new Paddle(this, 40, 35);
-	this.rightPaddle = new Paddle(this, 660, 35);
+	this.rightPaddle = new Paddle(this, 660, 160);
 	this.ball = new Ball(this);
 	this.gameObjects = [this.ball, this.leftPaddle, this.rightPaddle];
 	this.refreshRate = 1000 / 30;
 	var that = this;
 	$('html').keydown(function(e){
-	    console.log(e.which);
-	    if(e.which == 38) that.rightPaddle.move(-that.movespeed); // up
+ 	    if(e.which == 38) that.rightPaddle.move(-that.movespeed); // up
 	    if(e.which == 40) that.rightPaddle.move(+that.movespeed); //down
 	    });
 	},
@@ -141,7 +165,8 @@ var Game = Class.extend({
 	    game = this; //XXX debug
 	    game.active = false;
 	    game.update();
-	    game.draw();	    
+	    game.draw();
+	    if(this.ball.out_of_bounds()) this.stoprunning();
 	    // just for testing
 	    /*game._numloops = game._numloops || 0
 	    game._numloops += 1;
@@ -154,6 +179,7 @@ var Game = Class.extend({
 	},
     stoprunning: function(){
 	clearInterval(this._loopid);
+	console.log('Game Over')
 	}
 });
 

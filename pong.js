@@ -104,6 +104,7 @@ var Game = Class.extend({
     setup: function(){
 	this.boardheight = 500;
 	this.boardwidth = 700; // XXX; DRYify these
+	this.movespeed = 3; // how fast the paddle moves
 	this.board = $('#board_outer');
 	this.canvas = $('<canvas>', {
 	    'id': 'board_inner'});
@@ -117,6 +118,13 @@ var Game = Class.extend({
 	this.ball = new Ball(this);
 	this.gameObjects = [this.ball, this.leftPaddle, this.rightPaddle];
 	this.refreshRate = 1000 / 30;
+	var that = this;
+	$('html').keydown(function(e){
+	    console.log(e.which);
+	    if(e.which == 38) that.rightPaddle.move(-that.movespeed); // up
+	    if(e.which == 40) that.rightPaddle.move(+that.movespeed); //down
+	    });
+	},
     draw: function(){
 	this.context.clearRect(0,0,this.canvas.width(), this.canvas.height());
 	for(item in this.gameObjects){

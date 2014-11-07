@@ -1,18 +1,14 @@
 
 
-// XXX there is NO WAY this needs to be here, but I am shit at JS
 mainloop = function(){
    game.mainloop();
         };
 
 
 $(document).ready(function(){
-    console.log('hello world');
     game = new Game(true);
     game.setup();
     game.run();
-
-
 
 })
 
@@ -53,8 +49,6 @@ var Paddle = GameObject.extend({
 	},
 
     move: function(diffy){
-	// 'depth' seems clearer than height, considering the direction of the coords
-	// XXX: I'm letting paddles go slightly offscreen here
 	this.posy += diffy;
 	if (this.bottom() >= this.game.boardheight) this.posy = this.game.boardheight - this.size;
 	if (this.posy < 0) this.posy = 0;
@@ -143,9 +137,8 @@ var Game = Class.extend({
 	this.board = $('#board_outer');
 	this.canvas = $('<canvas>', {
 	    'id': 'board_inner'});
-	// XXX not sure why specifying these on creation turns them into just style attributes
-	this.canvas.attr('width', '700');
-	this.canvas.attr('height', '500');
+	this.canvas.attr('width', this.boardwidth);
+        this.canvas.attr('height', this.boardheight);
 	this.board.append(this.canvas);
 	this.context = $('#board_inner')[0].getContext("2d");
 	this.leftPaddle = new Paddle(this, 40, 100);
@@ -178,11 +171,6 @@ var Game = Class.extend({
 	    game.update();
 	    game.draw();
 	    if(this.ball.out_of_bounds()) this.stoprunning();
-	    // just for testing
-	    /*game._numloops = game._numloops || 0
-	    game._numloops += 1;
-	    console.log('gameloop' + game._numloops);
-	    if(game._numloops > 10) game.stoprunning();*/
     },
     run: function(){
 	this._loopid = setInterval(mainloop, this.refreshRate);
